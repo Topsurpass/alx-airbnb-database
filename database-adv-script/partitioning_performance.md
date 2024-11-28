@@ -3,6 +3,31 @@
 
 ## 1. Partitioned Table (`BookingPartioned`)
 
+### Table Structure
+```sql
+CREATE TABLE BookingPartioned (
+    booking_id CHAR(36) NOT NULL,
+    property_id CHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL,
+    status ENUM('pending', 'confirmed', 'canceled') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (booking_id, start_date)
+)
+PARTITION BY RANGE (YEAR(start_date)) (
+    PARTITION p2024q1 VALUES LESS THAN (2024),
+    PARTITION p2024q2 VALUES LESS THAN (2025),
+    PARTITION p2025 VALUES LESS THAN (2026)
+);
+
+INSERT INTO BookingPartioned
+SELECT booking_id, property_id, user_id, start_date, end_date, total_price, status, created_at
+FROM Booking;
+
+```
+
 ### EXPLAIN Output
 ```sql
 EXPLAIN SELECT * FROM BookingPartioned WHERE start_date > '2024-11-27 00:00:00';
@@ -30,9 +55,9 @@ EXPLAIN SELECT * FROM BookingPartioned WHERE start_date > '2024-11-27 00:00:00';
 ### Table Structure
 ```sql
 CREATE TABLE Booking (
-    booking_id CHAR(36) PRIMARY KEY DEFAULT (UUID()), -- Primary key
-    property_id CHAR(36) NOT NULL, -- Foreign key referencing Property
-    user_id CHAR(36) NOT NULL, -- Foreign key referencing User
+    booking_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    property_id CHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
