@@ -1,65 +1,55 @@
-## Optimization Report
 
-### Analyzing Query Performance
+# Analysis of Query Performance with JOINs
 
-```
-EXPLAIN SELECT b.booking_id, b.start_date, b.end_date, b.total_price, u.user_id, u.first_name, u.last_name, u.email, p.property_id, p.name AS property_name, p.location, pay.payment_id,
-pay.amount AS payment_amount, pay.payment_method FROM Booking b JOIN User u ON b.user_id = u.user_id JOIN Property p ON b.property_id = p.property_id LEFT JOIN Payment pay
-ON b.booking_id = pay.booking_id;
-
-```
-
-### Applying Indexes
-
-```
--- Create index for User table on email (commonly used in searches and unique constraint)
-CREATE UNIQUE INDEX idx_user_email ON User(email);
-
+## Query
+```sql
+SELECT  b.start_date, b.end_date, b.total_price,  u.first_name, u.last_name, u.email, 
+       p.name AS property_name, p.location, pay.payment_id, pay.amount AS payment_amount, pay.payment_method
+FROM Booking b 
+JOIN User u ON b.user_id = u.user_id 
+JOIN Property p ON b.property_id = p.property_id 
+LEFT JOIN Payment pay ON b.booking_id = pay.booking_id;
 ```
 
-```
--- Create index for Booking table on user_id and property_id (frequently used in JOIN operations)
-CREATE INDEX idx_booking_user_id ON Booking(user_id);
-CREATE INDEX idx_booking_property_id ON Booking(property_id);
-
-```
-
-```
--- Create index for Property table on location and pricepernight (commonly used in filtering or sorting)
-CREATE INDEX idx_property_location ON Property(location);
-CREATE INDEX idx_property_pricepernight ON Property(pricepernight);
-
+## EXPLAIN Output
+```sql
++----+-------------+-------+------------+--------+---------------------+------------+---------+----------------------+------+----------+-------+
+| id | select_type | table | partitions | type   | possible_keys       | key        | key_len | ref                  | rows | filtered | Extra |
++----+-------------+-------+------------+--------+---------------------+------------+---------+----------------------+------+----------+-------+
+|  1 | SIMPLE      | b     | NULL       | ALL    | fk_property,fk_user | NULL       | NULL    | NULL                 |    5 |   100.00 | NULL  |
+|  1 | SIMPLE      | u     | NULL       | eq_ref | PRIMARY             | PRIMARY    | 144     | airbnb.b.user_id     |    1 |   100.00 | NULL  |
+|  1 | SIMPLE      | p     | NULL       | eq_ref | PRIMARY             | PRIMARY    | 144     | airbnb.b.property_id |    1 |   100.00 | NULL  |
+|  1 | SIMPLE      | pay   | NULL       | ref    | fk_booking          | fk_booking | 144     | airbnb.b.booking_id  |    1 |   100.00 | NULL  |
++----+-------------+-------+------------+--------+---------------------+------------+---------+----------------------+------+----------+-------+
 ```
 
-```
--- Create index for Review table on property_id (frequently used in JOIN and aggregation queries)
-CREATE INDEX idx_review_property_id ON Review(property_id);
+## Explanation of the EXPLAIN Output
 
-```
+1. **Table `b` (Booking)**:
+   - **Type**: `ALL`, meaning a full table scan is performed. This is not optimal for large datasets and may indicate that there are no suitable indexes for the query.
+   - **Possible keys**: `fk_property`, `fk_user`, but none were used.
+   - **Rows examined**: 5, which is relatively low in this context.
+   
+2. **Table `u` (User)**:
+   - **Type**: `eq_ref`, which is the most efficient join type when there is a unique match for each row. This indicates that the join condition `b.user_id = u.user_id` is being optimized using the `PRIMARY` key.
+   - **Rows examined**: 1, showing an efficient lookup.
+   
+3. **Table `p` (Property)**:
+   - **Type**: `eq_ref`, similarly optimized as the join condition `b.property_id = p.property_id` uses the `PRIMARY` key.
+   - **Rows examined**: 1, suggesting a highly efficient join.
 
-```
--- Create index for Payment table on booking_id (frequently used in JOIN operations)
-CREATE INDEX idx_payment_booking_id ON Payment(booking_id);
+4. **Table `pay` (Payment)**:
+   - **Type**: `ref`, which is a good type for joining; it indicates that `fk_booking` is used to reference `b.booking_id`.
+   - **Rows examined**: 1, showing that a specific entry is found.
 
-```
+## Observations
 
-### Refactoring Query
+- The query appears to be efficient in terms of joins, as the `eq_ref` and `ref` join types indicate that indexed lookups are being used for most tables.
+- The full scan (`ALL`) on the `Booking` table suggests that an index on the `start_date` column or a composite index that includes it could significantly improve performance.
+- The `User`, `Property`, and `Payment` tables show optimal join behavior with `PRIMARY` and `fk_booking` indexes being utilized.
 
-Refactored Query: Optimize by reducing unnecessary data retrieval and ensuring indexes have been created on Booking(user_id), Booking(property_id), and Payment(booking_id)
+## Recommendations for Improvement
 
-```
-SELECT b.booking_id, b.start_date, b.end_date, b.total_price, u.first_name, u.last_name, p.name AS property_name, pay.amount AS payment_amount, pay.payment_method FROM Booking b JOIN User u ON b.user_id = u.user_id JOIN Property p ON b.property_id = p.property_id LEFT JOIN Payment pay ON b.booking_id = pay.booking_id;
+- **Indexing**: Ensure that the `Booking` table has an index on the `start_date` column to improve the scan performance.
+- **Review `Booking` table data**: If possible, partitioning the `Booking` table by `start_date` or creating relevant composite indexes could help in managing and querying large datasets more efficiently.
 
-```
-
-### Reanalyze Refactored Query and Compare
-
-```
-EXPLAIN SELECT b.booking_id, b.start_date, b.end_date, b.total_price, u.first_name, u.last_name, p.name AS property_name, pay.amount AS payment_amount, pay.payment_method FROM Booking b JOIN User u ON b.user_id = u.user_id JOIN Property p ON b.property_id = p.property_id LEFT JOIN Payment pay ON b.booking_id = pay.booking_id;
-```
-
-### Changes Nade
-
-- Reduced columns retrieved to only the necessary ones (e.g., excluded user_id, property_id).
-- Ensured indexes on user_id, property_id, and booking_id to optimize joins.
-- Used LEFT JOIN for Payment to include bookings without payments.
