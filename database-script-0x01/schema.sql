@@ -1,6 +1,6 @@
 -- User Table
 CREATE TABLE User (
-    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Primary key
+    user_id CHAR(36) PRIMARY KEY DEFAULT (UUID()), -- Use CHAR(36) to store UUID
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -12,8 +12,8 @@ CREATE TABLE User (
 
 -- Property Table
 CREATE TABLE Property (
-    property_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Primary key
-    host_id UUID NOT NULL, -- Foreign key referencing User
+    property_id CHAR(36) PRIMARY KEY DEFAULT (UUID()), -- Use CHAR(36) to store UUID
+    host_id CHAR(36) NOT NULL, -- Foreign key referencing User (CHAR(36))
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     location VARCHAR(255) NOT NULL,
@@ -25,9 +25,9 @@ CREATE TABLE Property (
 
 -- Booking Table
 CREATE TABLE Booking (
-    booking_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Primary key
-    property_id UUID NOT NULL, -- Foreign key referencing Property
-    user_id UUID NOT NULL, -- Foreign key referencing User
+    booking_id CHAR(36) PRIMARY KEY DEFAULT (UUID()), -- Use CHAR(36) to store UUID
+    property_id CHAR(36) NOT NULL, -- Foreign key referencing Property (CHAR(36))
+    user_id CHAR(36) NOT NULL, -- Foreign key referencing User (CHAR(36))
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
@@ -39,8 +39,8 @@ CREATE TABLE Booking (
 
 -- Payment Table
 CREATE TABLE Payment (
-    payment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Primary key
-    booking_id UUID NOT NULL, -- Foreign key referencing Booking
+    payment_id CHAR(36) PRIMARY KEY DEFAULT (UUID()), -- Use CHAR(36) to store UUID
+    booking_id CHAR(36) NOT NULL, -- Foreign key referencing Booking (CHAR(36))
     amount DECIMAL(10, 2) NOT NULL,
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     payment_method ENUM('credit_card', 'paypal', 'stripe') NOT NULL,
@@ -49,9 +49,9 @@ CREATE TABLE Payment (
 
 -- Review Table
 CREATE TABLE Review (
-    review_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Primary key
-    property_id UUID NOT NULL, -- Foreign key referencing Property
-    user_id UUID NOT NULL, -- Foreign key referencing User
+    review_id CHAR(36) PRIMARY KEY DEFAULT (UUID()), -- Use CHAR(36) to store UUID
+    property_id CHAR(36) NOT NULL, -- Foreign key referencing Property (CHAR(36))
+    user_id CHAR(36) NOT NULL, -- Foreign key referencing User (CHAR(36))
     rating INTEGER CHECK (rating >= 1 AND rating <= 5) NOT NULL,
     comment TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -61,9 +61,9 @@ CREATE TABLE Review (
 
 -- Message Table
 CREATE TABLE Message (
-    message_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Primary key
-    sender_id UUID NOT NULL, -- Foreign key referencing User
-    recipient_id UUID NOT NULL, -- Foreign key referencing User
+    message_id CHAR(36) PRIMARY KEY DEFAULT (UUID()), -- Use CHAR(36) to store UUID
+    sender_id CHAR(36) NOT NULL, -- Foreign key referencing User (CHAR(36))
+    recipient_id CHAR(36) NOT NULL, -- Foreign key referencing User (CHAR(36))
     message_body TEXT NOT NULL,
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_sender FOREIGN KEY (sender_id) REFERENCES User(user_id) ON DELETE CASCADE,
