@@ -14,3 +14,6 @@ CREATE INDEX idx_review_property_id ON Review(property_id);
 
 -- Create index for Payment table on booking_id (frequently used in JOIN operations)
 CREATE INDEX idx_payment_booking_id ON Payment(booking_id);
+
+EXPLAIN ANALYZE SELECT  b.start_date, b.end_date, b.total_price,  u.first_name, u.last_name, u.email,  p.name AS property_name, p.location, pay.payment_id, pay.amount AS payment_amount, pay.payment_method
+FROM Booking b JOIN User u ON b.user_id = u.user_id JOIN Property p ON b.property_id = p.property_id LEFT JOIN Payment pay  ON b.booking_id = pay.booking_id;
