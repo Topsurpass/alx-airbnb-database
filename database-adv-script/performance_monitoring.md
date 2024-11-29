@@ -3,8 +3,9 @@
 ## Query Used
 
 ```sql
-EXPLAIN ANALYZE SELECT  b.start_date, b.end_date, b.total_price,  u.first_name, u.last_name, u.email,  p.name AS property_name, p.location, pay.payment_id, pay.amount AS payment_amount, pay.payment_method
-FROM Booking b JOIN User u ON b.user_id = u.user_id JOIN Property p ON b.property_id = p.property_id LEFT JOIN Payment pay  ON b.booking_id = pay.booking_id;
+EXPLAIN ANALYZE SELECT b.start_date, b.end_date, b.total_price, u.first_name, u.last_name, u.email, p.name AS property_name, p.location, pay.payment_id, pay.amount AS payment_amount,
+pay.payment_method FROM Booking b JOIN User u ON b.user_id = u.user_id JOIN Property p ON b.property_id = p.property_id LEFT JOIN Payment pay ON b.booking_id = pay.booking_id
+WHERE b.start_date >= '2024-01-01' AND b.total_price > 100;
 ```
 
 ## EXPLAIN ANALYZE Output
@@ -13,13 +14,14 @@ FROM Booking b JOIN User u ON b.user_id = u.user_id JOIN Property p ON b.propert
 +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | EXPLAIN                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| -> Nested loop left join  (cost=6 rows=5) (actual time=0.0533..0.0751 rows=5 loops=1)
-    -> Nested loop inner join  (cost=4.25 rows=5) (actual time=0.0436..0.055 rows=5 loops=1)
-        -> Nested loop inner join  (cost=2.5 rows=5) (actual time=0.0405..0.0466 rows=5 loops=1)
-            -> Table scan on b  (cost=0.75 rows=5) (actual time=0.0294..0.0309 rows=5 loops=1)
-            -> Single-row index lookup on u using PRIMARY (user_id=b.user_id)  (cost=0.27 rows=1) (actual time=0.00278..0.00279 seconds per loop) (5 loops)
-        -> Single-row index lookup on p using PRIMARY (property_id=b.property_id)  (cost=0.27 rows=1) (actual time=0.00151..0.00154 seconds per loop) (5 loops)
-    -> Index lookup on pay using fk_booking (booking_id=b.booking_id)  (cost=0.27 rows=1) (actual time=0.0031..0.00353 seconds per loop) (5 loops)
+|  -> Nested loop left join  (cost=3.67 rows=1.67) (actual time=0.154..0.208 rows=5 loops=1)
+    -> Nested loop inner join  (cost=3.08 rows=1.67) (actual time=0.141..0.174 rows=5 loops=1)
+        -> Nested loop inner join  (cost=2.5 rows=1.67) (actual time=0.13..0.154 rows=5 loops=1)
+            -> Table scan on p  (cost=0.75 rows=5) (actual time=0.0593..0.0636 rows=5 loops=1)
+            -> Filter: ((b.start_date >= DATE'2024-01-01') and (b.total_price > 100.00))  (cost=0.257 rows=0.333) (actual time=0.0136..0.0142 rows=1 loops=5)
+                -> Index lookup on b using fk_property (property_id=p.property_id)  (cost=0.257 rows=1) (actual time=0.0124..0.0129 rows=1 loops=5)
+        -> Single-row index lookup on u using PRIMARY (user_id=b.user_id)  (cost=0.31 rows=1) (actual time=0.00349..0.00353 rows=1 loops=5)
+    -> Index lookup on pay using fk_booking (booking_id=b.booking_id)  (cost=0.31 rows=1) (actual time=0.00439..0.00604 rows=1 loops=5)
  |
 +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 1 row in set (0.00 sec)
